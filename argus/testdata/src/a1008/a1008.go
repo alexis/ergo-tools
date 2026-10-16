@@ -53,6 +53,18 @@ func (b *Builder) HandleCall(from gen.PID, ref gen.Ref, request any) (any, error
 	return nil, nil
 }
 
+type Partial struct {
+	act.Actor
+}
+
+// A result does not keep an error out of the reason slot.
+func (p *Partial) HandleCall(from gen.PID, ref gen.Ref, request any) (any, error) {
+	if request == nil {
+		return StatusResponse{}, fmt.Errorf("nil request") // want `A1008.*drops the result`
+	}
+	return StatusResponse{Open: true}, nil
+}
+
 type Deep struct {
 	act.Actor
 }

@@ -24,7 +24,7 @@ request type can terminate the callee, which makes this remotely triggerable.
 
 To reject a request, put the error in the first result ("return err, nil") or call
 SendResponseError. Returning gen.TerminateReasonNormal or TerminateReasonShutdown
-in the second slot is the idiomatic reply-then-stop form and is not reported.
+in the second slot is the idiomatic way to stop the process and is not reported.
 
 Source: messages.md, meta.md, actors.md`,
 	URL:      "https://docs.ergo.services/tools/argus#A1008",
@@ -52,9 +52,6 @@ func run(pass *analysis.Pass) (any, error) {
 			if ok == false || len(ret.Results) != 2 {
 				return true
 			}
-			if isNilIdent(ret.Results[0]) == false {
-				return true
-			}
 			reason := ret.Results[1]
 			if isNilIdent(reason) {
 				return true
@@ -63,6 +60,15 @@ func run(pass *analysis.Pass) (any, error) {
 				return true
 			}
 			if implementsError(pass.TypesInfo.TypeOf(reason)) == false {
+				return true
+			}
+
+			if isNilIdent(ret.Results[0]) == false {
+				m.Report(pass, ret.Pos(),
+					ergomodel.Finding{Rule: ruleID, Kind: ergomodel.KindCallback, Tier: 1,
+						ID: ergomodel.CallbackID(cb)},
+					"%s returns an error in the termination reason slot, which kills the process and drops the result",
+					cb.Name)
 				return true
 			}
 
